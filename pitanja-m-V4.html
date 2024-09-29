@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pitanja i Odgovori</title>
+</head>
+<body>
+    <h2>Pitanja i Odgovori</h2>
+    <ul id="dataList"></ul> <!-- Ovdje će se prikazati podaci -->
+
+    <script>
+        const BASE_URL = 'https://script.google.com/macros/s/AKfycbwutWRk65IufdHHp3JOXPa9YA2YdgMZD88yxKAxd7P6LqRjtP6jkVqxNAO9VWoqHJ-6RA/exec'; // Zamijeni s pravim URL-om
+        const MARK_READ_URL = 'https://script.google.com/macros/s/AKfycbwutWRk65IufdHHp3JOXPa9YA2YdgMZD88yxKAxd7P6LqRjtP6jkVqxNAO9VWoqHJ-6RA/markAnswered';
+ // URL za označavanje
+
+        // Funkcija za formatiranje datuma
+        function formatDate(timestamp) {
+            const date = new Date(timestamp);
+            const options = {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false // Koristi 24-satni format
+            };
+            // Formatiraj datum prema željenom formatu
+            return date.toLocaleString('en-US', options).replace(',', '').replace(/\//g, '-');
+        }
+
+        async function fetchData() {
+            try {
+                const response = await fetch(BASE_URL);
+                const data = await response.json();
+                
+                const dataList = document.getElementById('dataList'); // Element za prikaz podataka
+                dataList.innerHTML = ''; // Očisti postojeće podatke
+
+                data.forEach((item, index) => {
+                    const listItem = document.createElement('li');
+                    
+                    // Prikaz datuma u ispravnom formatu
+                    const formattedDate = formatDate(item.timestamp);
+                    listItem.innerHTML = `${formattedDate}: ${item.name} - ${item.question} 
+                        <button onclick="markRead(${index + 1})">OK</button>`;
+                    dataList.appendChild(listItem);
+                });
+
+            } catch (error) {
+                console.error('Greška prilikom dohvaćanja podataka:', error);
+            }
+        }
+
+      async function markRead(row) {
+    try {
+        const response = await fetch(MARK_READ_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ row: row }) // Redak koji se označava
+        });
+        
+        const result = await response.json();
+        if (result.status === 'success') {
+            fetchData(); // Ponovo dohvati podatke nakon označavanja
+        } else {
+            console.error('Greška prilikom označavanja:', result.message);
+        }
+    } catch (error) {
+        console.error('Greška prilikom označavanja:', error);
+    }
+}
+
+        // Pozovi fetchData kada se učita stranica
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchData(); // Prvo dohvaćanje podataka
+
+            // Osvježavaj podatke svakih 5 sekundi
+            setInterval(fetchData, 5000);
+        });
+    </script>
+</body>
+</html>
